@@ -1,19 +1,24 @@
 #! /usr/bin/env node
 var program = require('commander');
 var request = require('request');
+var readLine = require('readline');
+var fs = require('fs');
 
 program.arguments('<action>')
-  .version('0.0.4')
+  .version('0.0.5')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
   .option('-z, --zone_id <zone_id>', 'private monitoring zone id', 'pzA')
-  .option('-e, --entity_id <entity_id>', 'entity id for which you want to create the checks')
-  .option('--target <target>', 'check target for ping and tcp checks', '127.0.0.1')
+  .option('-e, --entity_id <entity_id>', 'entity id')
+  .option('--check_id <check_id>', 'check id')
+  .option('--token_id <token_id>', 'token_id')
+  .option('--target <target>', 'check target hostname', '127.0.0.1')
   .option('--port <port>', 'port', 80)
   .option('--url <url>', 'check url for http checks', 'http://www.rackspace.com')
   .option('-m, --method <method>', 'http method', 'GET')
   .option('--use_staging <use_staging>', 'whether to use staging endpoint for monitoring api', false)
   .option('-c, --count <count>', 'count of the actions to be performed', 1)
+  .option('-f, --file <file>', 'file location to extract the ids from', null)
   .action(function(action) {
     var tenantId = program.tenant_id;
     var authToken = program.auth_token;
@@ -21,10 +26,13 @@ program.arguments('<action>')
     var useStaging = program.use_staging;
     var zoneId = program.zone_id;
     var entityId = program.entity_id;
+    var checkId = program.check_id;
+    var tokenId = program.token_id;
     var target = program.target;
     var url = program.url;
     var method = program.method;
     var port = program.port;
+    var file = program.file;
 
     var check_types = [
       {
@@ -73,7 +81,7 @@ program.arguments('<action>')
       stage: 'https://staging.monitoring.api.rackspacecloud.com/v1.0/'
     };
 
-    var post = function(url, payload, authToken, callback) {
+    var postApi = function(url, payload, authToken, callback) {
       var body = JSON.parse(JSON.stringify(payload));
       var options = {
         url: url,
@@ -92,11 +100,36 @@ program.arguments('<action>')
       request(options, callback);
     };
 
+    var deleteApi = function(url, authToken, callback) {
+      var options = {
+        url: url,
+        method: 'DELETE',
+        json: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Token': authToken,
+          'X-Roles': 'monitoring:admin',
+          'x-impersonator-role': 'monitoring:service-admin,object-store:admin'
+        },
+        rejectUnauthorized: false
+      };
+
+      request(options, callback);
+    };
+
     var monitoringPost = function(url, payload, authToken, callback) {
       if(useStaging === 'true'){
-        post(monitoring_service_access_endpoints.stage + url, payload, authToken, callback);
+        postApi(monitoring_service_access_endpoints.stage + url, payload, authToken, callback);
       } else {
-        post(monitoring_service_access_endpoints.prod + url, payload, authToken, callback);
+        postApi(monitoring_service_access_endpoints.prod + url, payload, authToken, callback);
+      }
+    };
+
+    var monitoringDelete = function(url, authToken, callback) {
+      if(useStaging === 'true'){
+        deleteApi(monitoring_service_access_endpoints.stage + url, authToken, callback);
+      } else {
+        deleteApi(monitoring_service_access_endpoints.prod + url, authToken, callback);
       }
     };
 
@@ -187,6 +220,123 @@ program.arguments('<action>')
             }
           }
         });
+      }
+    }
+    else if (action == 'delete_zone') {
+      var deleteZone = function(id, token) {
+        monitoringDelete(tenantId+'/monitoring_zones/' + id, token, function(err, res, body) {
+          if(err) {
+            console.log(err);
+          } else {
+            if(res.statusCode == 204){
+              console.log('Successfully deleted zone: ' + id);
+            }
+            else {
+              console.log(res.statusCode);
+              console.log(body);
+            }
+          }
+        });
+      };
+      if (file != null) {
+        var lineReader = readLine.createInterface({
+          input: fs.createReadStream(file)
+        });
+
+        lineReader.on('line', function (id) {
+          deleteZone(id, authToken);
+        });
+
+      } else {
+        deleteZone(zoneId, authToken);
+      }
+    }
+    else if (action == 'delete_entity') {
+      var deleteEntity = function(id, token) {
+        monitoringDelete(tenantId+'/entities/' + id, token, function(err, res, body) {
+          if(err) {
+            console.log(err);
+          } else {
+            if(res.statusCode == 204){
+              console.log('Successfully deleted entity: ' + id);
+            }
+            else {
+              console.log(res.statusCode);
+              console.log(body);
+            }
+          }
+        });
+      };
+      if (file != null) {
+        var lineReader = readLine.createInterface({
+          input: fs.createReadStream(file)
+        });
+
+        lineReader.on('line', function (id) {
+          deleteEntity(id, authToken);
+        });
+
+      } else {
+        deleteEntity(entityId, authToken);
+      }
+    }
+    else if (action == 'delete_check') {
+      var deleteCheck = function(id, entityId, token) {
+        monitoringDelete(tenantId+'/entities/' + entityId + '/checks/' + id, token, function(err, res, body) {
+          if(err) {
+            console.log(err);
+          } else {
+            if(res.statusCode == 204){
+              console.log('Successfully deleted check: ' + id);
+            }
+            else {
+              console.log(res.statusCode);
+              console.log(body);
+            }
+          }
+        });
+      };
+      if (file != null) {
+        var lineReader = readLine.createInterface({
+          input: fs.createReadStream(file)
+        });
+
+        lineReader.on('line', function (line) {
+          var ids = line.split(',');
+          deleteCheck(ids[1], ids[0], authToken);
+        });
+
+      } else {
+        deleteCheck(checkId, entityId, authToken);
+      }
+    }
+    else if (action == 'delete_agent_token') {
+      var deleteAgentToken = function(id, authToken) {
+        monitoringDelete(tenantId+'/agent_tokens/' + id, authToken, function(err, res, body) {
+          if(err) {
+            console.log(err);
+          } else {
+            if(res.statusCode == 204){
+              console.log('Successfully deleted token: ' + id);
+            }
+            else {
+              console.log(res.statusCode);
+              console.log(body);
+            }
+          }
+        });
+      };
+      if (file != null) {
+        var lineReader = readLine.createInterface({
+          input: fs.createReadStream(file)
+        });
+
+        lineReader.on('line', function (id) {
+          deleteAgentToken(id, authToken);
+        });
+
+      } else {
+        deleteAgentToken(tokenId, authToken);
       }
     }
   })

@@ -1,7 +1,7 @@
 {
   "name": "pnm-cli",
-  "version": "0.0.4",
-  "description": "A command line tool for creating private zones, entities, checks and agent_tokens.",
+  "version": "0.0.5",
+  "description": "A command line tool to create and delete private zones, entities, checks and agent_tokens.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,8 +15,8 @@
     "commander": "^2.9.0",
     "request": "^2.80.0"
   },
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/goru97/pnm-cli.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goru97/pnm-cli.git"
   }
 }
