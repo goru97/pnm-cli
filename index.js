@@ -3,7 +3,7 @@ var program = require('commander');
 var request = require('request');
 
 program.arguments('<action>')
-  .version('0.0.3')
+  .version('0.0.4')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
   .option('-z, --zone_id <zone_id>', 'private monitoring zone id', 'pzA')
@@ -50,7 +50,7 @@ program.arguments('<action>')
         monitoring_zones_poll: [
           'pzA'
         ],
-        target: '127.0.0.1',
+        target_hostname: '127.0.0.1',
         timeout: 30,
         period: 100
       },
@@ -63,7 +63,7 @@ program.arguments('<action>')
         monitoring_zones_poll: [
           'pzA'
         ],
-        target: '127.0.0.1',
+        target_hostname: '127.0.0.1',
         timeout: 30,
         period: 100
       }
@@ -146,7 +146,7 @@ program.arguments('<action>')
         var check = check_types[typeCount];
         check.label = check.label + '_' + count;
         check.monitoring_zones_poll = [zoneId];
-        check.target = target;
+        check.target_hostname = target;
 
         if(check.type == 'remote.http') {
           check.details.url = url;

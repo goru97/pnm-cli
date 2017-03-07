@@ -1,6 +1,6 @@
 {
   "name": "pnm-cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A command line tool for creating private zones, entities, checks and agent_tokens.",
   "main": "index.js",
   "scripts": {
