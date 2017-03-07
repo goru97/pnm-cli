@@ -3,7 +3,7 @@ var program = require('commander');
 var request = require('request');
 
 program.arguments('<action>')
-  .version('0.0.1')
+  .version('0.0.2')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
   .option('-z, --zone_id <zone_id>', 'private monitoring zone id', 'pzA')
@@ -117,7 +117,8 @@ program.arguments('<action>')
           }
         });
       }
-    } else if (action == 'create_entity') {
+    }
+    else if (action == 'create_entity') {
       for(var j = 0; j< count; j++) {
         var entityPayload = {label: 'entity_' + j};
         monitoringPost(tenantId+'/entities', entityPayload, authToken, function(err, res, body) {
@@ -134,7 +135,8 @@ program.arguments('<action>')
           }
         });
       }
-    } else if(action == 'create_check') {
+    }
+    else if(action == 'create_check') {
       var typeCount = -1;
       for(var k = 0; k< count; k++) {
         typeCount++;
@@ -155,6 +157,24 @@ program.arguments('<action>')
         }
 
         monitoringPost(tenantId + '/entities/' + entityId + '/checks', check, authToken, function(err, res, body) {
+          if(err) {
+            console.log(err);
+          } else {
+            if(res.statusCode == 201){
+              console.log(res.headers['x-object-id']);
+            }
+            else {
+              console.log(res.statusCode);
+              console.log(body);
+            }
+          }
+        });
+      }
+    }
+    else if (action == 'create_agent_token') {
+      for(var l = 0; l< count; l++) {
+        var tokenload = {label: 'agent_token_' + l};
+        monitoringPost(tenantId+'/agent_tokens', tokenload, authToken, function(err, res, body) {
           if(err) {
             console.log(err);
           } else {

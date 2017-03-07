@@ -1,6 +1,6 @@
 {
   "name": "pnm-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A command line tool for creating private zones and checks",
   "main": "index.js",
   "scripts": {

@@ -8,13 +8,13 @@
 * Create zone:
 ```pnm-cli -t <tenant_id> --auth_token <auth_token> --use_staging true create_zone```
 
-* Create 10 zones
+* Create 10 zones:
 ```pnm-cli -t <tenant_id> --auth_token <auth_token> --use_staging true -c 10 create_zone```
 
 * Create entity:
 ```pnm-cli -t <tenant_id> --auth_token <auth_token> --use_staging true create_entity```
 
-* Create 10 entities
+* Create 10 entities:
 ```pnm-cli -t <tenant_id> --auth_token <auth_token> --use_staging true -c 10 create_entity```
 
 * Create check:
@@ -22,3 +22,9 @@
 
 * Create 100 checks:
 ```pnm-cli -t <tenant_id> --auth_token <auth_token> -e <entity_id> -z <zone_id> --target <target> --url <url> --method <method> --use_staging true --target -c 100 create_check```
+
+* Create agent token:
+```pnm-cli -t <tenant_id> --auth_token <auth_token> --use_staging true create_agent_token```
+
+* Create 10 agent tokens:
+```pnm-cli -t <tenant_id> --auth_token <auth_token> --use_staging true -c 10 create_agent_token```
