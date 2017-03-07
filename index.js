@@ -3,7 +3,7 @@ var program = require('commander');
 var request = require('request');
 
 program.arguments('<action>')
-  .version('0.0.2')
+  .version('0.0.3')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
   .option('-z, --zone_id <zone_id>', 'private monitoring zone id', 'pzA')
