@@ -5,7 +5,7 @@ var readLine = require('readline');
 var fs = require('fs');
 
 program.arguments('<action>')
-  .version('0.0.5')
+  .version('0.0.6')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
   .option('--username <username>', 'username', '')
