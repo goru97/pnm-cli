@@ -8,6 +8,8 @@ program.arguments('<action>')
   .version('0.0.5')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
+  .option('--username <username>', 'username', '')
+  .option('--apikey <apikey>', 'apikey', '')
   .option('-z, --zone_id <zone_id>', 'private monitoring zone id', 'pzA')
   .option('-e, --entity_id <entity_id>', 'entity id')
   .option('--check_id <check_id>', 'check id')
@@ -22,6 +24,8 @@ program.arguments('<action>')
   .action(function(action) {
     var tenantId = program.tenant_id;
     var authToken = program.auth_token;
+    var username = program.username;
+    var apikey = program.apikey;
     var count = program.count;
     var useStaging = program.use_staging;
     var zoneId = program.zone_id;
@@ -80,6 +84,28 @@ program.arguments('<action>')
       prod: 'https://monitoring.api.rackspacecloud.com/v1.0/',
       stage: 'https://staging.monitoring.api.rackspacecloud.com/v1.0/'
     };
+    var identity_endpoints = {
+        prod: 'https://identity.api.rackspacecloud.com/v2.0/',
+        stage: 'https://staging.identity.api.rackspacecloud.com/v2.0/'
+    };
+
+    var getApi = function(url, authToken, callback) {
+      var options = {
+        url: url,
+        method: 'GET',
+        json: true,
+        headers: {
+          'Accepted': 'application/json',
+          'X-Auth-Token': authToken,
+          'X-Roles': 'monitoring:admin',
+          'x-impersonator-role': 'monitoring:service-admin,object-store:admin'
+        },
+        rejectUnauthorized: false
+      };
+
+      request(options, callback);
+    };
+
 
     var postApi = function(url, payload, authToken, callback) {
       var body = JSON.parse(JSON.stringify(payload));
@@ -117,6 +143,14 @@ program.arguments('<action>')
       request(options, callback);
     };
 
+    var monitoringGet = function(url, authToken, callback) {
+      if(useStaging === 'true'){
+        getApi(monitoring_service_access_endpoints.stage + url, authToken, callback);
+      } else {
+        getApi(monitoring_service_access_endpoints.prod + url, authToken, callback);
+      }
+    };
+
     var monitoringPost = function(url, payload, authToken, callback) {
       if(useStaging === 'true'){
         postApi(monitoring_service_access_endpoints.stage + url, payload, authToken, callback);
@@ -132,6 +166,50 @@ program.arguments('<action>')
         deleteApi(monitoring_service_access_endpoints.prod + url, authToken, callback);
       }
     };
+
+    /**
+     * Attempts to authenticate against the identify endpoint and retrieve tenantId and authToken.
+     * @param callback {function} invoked without any argument if authentication is successful
+     */
+    var authenticate = function (callback) {
+      var options = {
+        url: (useStaging === 'true' ? identity_endpoints.stage : identity_endpoints.prod) + 'tokens',
+        method: 'POST',
+        body: {
+          auth: {
+            "RAX-KSKEY:apiKeyCredentials": {
+              username: username,
+              apiKey: apikey
+            }
+          }
+        },
+        json: true,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        rejectUnauthorized: false
+      };
+
+      request(options, function(err, res, body){
+        if (err) {
+          console.log('Failed to authenticate', err);
+        }
+        else {
+          if (res.statusCode == 200) {
+            authToken = body.access.token.id;
+            tenantId = body.access.token.tenant.id;
+
+            callback();
+          }
+          else {
+            console.log('Tried to authenticate', res.statusCode);
+            console.log(body);
+          }
+        }
+      });
+    };
+
+    var processAction = function() {
 
     if (action == 'create_zone') {
       for(var i = 0; i < count; i++) {
@@ -339,5 +417,40 @@ program.arguments('<action>')
         deleteAgentToken(tokenId, authToken);
       }
     }
+    else if (action == 'list_zones') {
+      monitoringGet(tenantId+'/monitoring_zones', authToken, function(err, res, body) {
+        if(err) {
+          console.log(err);
+        } else {
+          if (res.statusCode == 200) {
+            console.log(body.values);
+          }
+          else {
+            console.log(res.statusCode);
+            console.log(body);
+          }
+        }
+      });
+    }
+    else if (action == 'account_info') {
+      monitoringGet(tenantId + '/account', authToken, function (err, res, body) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(res.statusCode);
+          console.log(body);
+        }
+      });
+    }
+
+    };
+
+    if (!tenantId && !authToken && username && apikey) {
+        authenticate(processAction);
+    }
+    else {
+        processAction();
+    }
+
   })
   .parse(process.argv);

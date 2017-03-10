@@ -6,6 +6,15 @@
 
 ## Example commands:
 
+### Authenticating
+
+Instead of using `-t <tenant_id> --auth_token <auth_token>` you can also supply your account username and API key
+such as:
+
+```
+pnm-cli --username <username> --apikey <api_key> --use_staging true <command>
+```
+
 ### Create
 
 * Create zone:
