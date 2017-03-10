@@ -81,6 +81,24 @@ program.arguments('<action>')
       stage: 'https://staging.monitoring.api.rackspacecloud.com/v1.0/'
     };
 
+    var getApi = function(url, authToken, callback) {
+      var options = {
+        url: url,
+        method: 'GET',
+        json: true,
+        headers: {
+          'Accepted': 'application/json',
+          'X-Auth-Token': authToken,
+          'X-Roles': 'monitoring:admin',
+          'x-impersonator-role': 'monitoring:service-admin,object-store:admin'
+        },
+        rejectUnauthorized: false
+      };
+
+      request(options, callback);
+    };
+
+
     var postApi = function(url, payload, authToken, callback) {
       var body = JSON.parse(JSON.stringify(payload));
       var options = {
@@ -115,6 +133,14 @@ program.arguments('<action>')
       };
 
       request(options, callback);
+    };
+
+    var monitoringGet = function(url, authToken, callback) {
+      if(useStaging === 'true'){
+        getApi(monitoring_service_access_endpoints.stage + url, authToken, callback);
+      } else {
+        getApi(monitoring_service_access_endpoints.prod + url, authToken, callback);
+      }
     };
 
     var monitoringPost = function(url, payload, authToken, callback) {
@@ -339,5 +365,21 @@ program.arguments('<action>')
         deleteAgentToken(tokenId, authToken);
       }
     }
+    else if (action == 'list_zones') {
+      monitoringGet(tenantId+'/monitoring_zones', authToken, function(err, res, body) {
+        if(err) {
+          console.log(err);
+        } else {
+          if (res.statusCode == 200) {
+            console.log(body.values);
+          }
+          else {
+            console.log(res.statusCode);
+            console.log(body);
+          }
+        }
+      });
+    }
+
   })
   .parse(process.argv);
