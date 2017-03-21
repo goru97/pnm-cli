@@ -5,7 +5,7 @@ var readLine = require('readline');
 var fs = require('fs');
 
 program.arguments('<action>')
-  .version('0.0.6')
+  .version('0.0.7')
   .option('-t, --tenant_id <tenant_id>', 'tenant id')
   .option('--auth_token <auth_token>', 'auth_token', '')
   .option('--username <username>', 'username', '')
@@ -13,7 +13,7 @@ program.arguments('<action>')
   .option('-z, --zone_id <zone_id>', 'private monitoring zone id', 'pzA')
   .option('-e, --entity_id <entity_id>', 'entity id')
   .option('--check_id <check_id>', 'check id')
-  .option('--token_id <token_id>', 'token_id')
+  .option('--token_id <token_id>', 'token_id', null)
   .option('--target <target>', 'check target hostname', '127.0.0.1')
   .option('--port <port>', 'port', 80)
   .option('--url <url>', 'check url for http checks', 'http://www.rackspace.com')
@@ -232,6 +232,9 @@ program.arguments('<action>')
     else if (action == 'create_entity') {
       for(var j = 0; j< count; j++) {
         var entityPayload = {label: 'entity_' + j};
+        if (tokenId != null) {
+          entityPayload['agent_id'] = tokenId;
+        }
         monitoringPost(tenantId+'/entities', entityPayload, authToken, function(err, res, body) {
           if(err) {
             console.log(err);
